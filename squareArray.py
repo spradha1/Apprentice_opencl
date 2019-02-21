@@ -3,6 +3,8 @@ import pyopencl as cl
 import numpy as np
 import os
 
+SIZE = 10
+
 if __name__ == "__main__":
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
     os.environ['PYOPENCL_CTX'] = '1'
@@ -14,8 +16,7 @@ if __name__ == "__main__":
     queue = cl.CommandQueue(ctx)
 
     # array attributes
-    n = 10
-    a = np.random.randint(10, size=n)
+    a = np.random.randint(10, size=SIZE)
     a = a.astype(np.int32)
     copy_a = a
 
@@ -25,14 +26,14 @@ if __name__ == "__main__":
 
     # kernel program
     prg = cl.Program(ctx, '''
-        __kernel void square(__global int* a){
+        __kernel void square(__global int a[]){
             int gid = get_global_id(0);
             a[gid] *= a[gid];
         }
         ''').build()
 
-    prg.square(queue, a.shape, None, a_buf)
-    a = np.empty((n,), dtype = np.uint32)
+    prg.square(queue, (SIZE,), (1,), a_buf)
+    a = np.empty((SIZE,), dtype = np.uint32)
 
     cl.enqueue_copy(queue, a, a_buf)
 
