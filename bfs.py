@@ -5,8 +5,6 @@ import numpy as np
 import os
 import sys
 
-TASKS = 3
-
 if __name__ == "__main__":
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
     os.environ['PYOPENCL_CTX'] = '1'
@@ -37,9 +35,10 @@ if __name__ == "__main__":
     neighbours = np.array([2, 2, 2, 3, 3, 2, 2, 2, 2]) # of neighbours of each vertex
     neighbours = neighbours.astype(np.int32)
 
+    src = 0                            # search key
     visited = np.empty(keys.size)      # visited vertices
     frontier = np.full(keys.size, -1)  # next in line to be traversed with arbitrary source
-    goal = np.array([6])               # vertex to find
+    goal = np.array([5])              # vertex to find
     vertices = np.array([keys.size])   # number of vertices
     max_neighbours = np.array([4])     # maximum neighbours possible for a vertex
     found = np.array([0])              # search result indicator
@@ -48,9 +47,10 @@ if __name__ == "__main__":
     threads = []
     first_neighbours = []
 
-    step = keys.size/TASKS             # vertices per thread
-    for g in range(0, TASKS):
-        threads.append(keys[g*step])   # assigning scattered starting points
+    src_index = np.argwhere(keys==src)[0]
+    nbrs = neighbours[src_index]
+    for g in range(0, nbrs):
+        threads.append(graph[src_index*max_neighbours + g])   # assigning scattered starting points
     threads = np.array(threads)
     threads = threads.astype(np.int32)
     
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     # kernel program
     prg = cl.Program(ctx, '''
-        __kernel void bfs (__global int graph[], __global int keys[], __global int neighbours[], __global int visited[], __global int frontier[], __global int* goal, __global int* vertices, __global int* max_neighbours, __global int* threads, __global int* found) {
+        __kernel void bfs (__global int graph[], __global int keys[], __global int neighbours[], __global int* visited, __global int frontier[], __global int* goal, __global int* vertices, __global int* max_neighbours, __global int* threads, __global int* found) {
             int gid = get_global_id(0);
             frontier[0] = *(threads+gid);
             int fsize = 1;
@@ -142,4 +142,4 @@ if __name__ == "__main__":
         }
     ''').build()
 
-    prg.bfs(queue, (TASKS,), (1,), graph_buf, keys_buf, neighbours_buf, visited_buf, frontier_buf, goal_buf, vertices_buf, max_neighbours_buf, threads_buf, found_buf)
+    prg.bfs(queue, (threads.size,), (1,), graph_buf, keys_buf, neighbours_buf, visited_buf, frontier_buf, goal_buf, vertices_buf, max_neighbours_buf, threads_buf, found_buf)
