@@ -1,4 +1,4 @@
-# sequential bfs
+# sequential bfs: finding path to a goal node
 from collections import defaultdict
 import time
 import sys
@@ -45,6 +45,12 @@ class Graph:
         print "Not Found", g
 
 if __name__ == "__main__":
+
+    # validation
+    if (len(sys.argv) != 4):
+        print 'Error: Usage: python bfs_seq.py <edges_file>:str <source_vertex>:int <goal_vertex>:int'
+        sys.exit()
+
     g = Graph()
     # file with list of edges
     with open("dataSets/" + sys.argv[1], "r") as edges:
@@ -53,5 +59,5 @@ if __name__ == "__main__":
             g.addEdge(int(vertices[0]), int(vertices[1]))
 
     start = time.time()
-    g.BFS(58, 3029)
-    print time.time() - start
+    g.BFS(int(sys.argv[2]), int(sys.argv[3]))
+print time.time() - start

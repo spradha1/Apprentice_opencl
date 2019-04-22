@@ -1,4 +1,4 @@
-# gpu bfs
+# gpu bfs: finding path to a goal node
 import pyopencl as cl
 import pyopencl.tools
 import pyopencl.array
@@ -17,6 +17,11 @@ if __name__ == "__main__":
     device = platform.get_devices()[0]
     ctx = cl.Context([device])
     queue = cl.CommandQueue(ctx)
+
+    # validation
+    if (len(sys.argv) != 4):
+        print 'Error: Usage: python bfs_gpu.py <no_of_threads>:int <edges_file>:str <goal_vertex>:int'
+        sys.exit()
 
     # grab all edges from input file
     graph = defaultdict(list)
@@ -55,7 +60,7 @@ if __name__ == "__main__":
     # bfs stuff
     visited = np.full(len(graph), -1)  # visited vertices storage
     frontier = np.full(len(graph), -1) # next in line to be traversed with arbitrary source
-    goal = np.array([3029])            # vertex to find
+    goal = np.array([int(sys.argv[3])])# vertex to find
     vertices = np.array([len(graph)])  # number of vertices
     found = np.array([0])              # search result indicator
 
@@ -99,6 +104,9 @@ if __name__ == "__main__":
             int v = 0;
             while (true) {
                 int current = frontier[0];
+                visited[v] = current;
+                v++;
+                printf("%d ", current);
                 if (fsize == 0) {
                     printf("Not found %d\\n", goal[0]);
                     return;
@@ -108,8 +116,7 @@ if __name__ == "__main__":
                     found[0]++;
                     return;
                 }
-                visited[v] = current;
-                v++;
+                
                 for (int fr=0; fr<fsize-1; fr++) {
                     frontier[fr] = frontier[fr+1];
                 }
@@ -117,6 +124,8 @@ if __name__ == "__main__":
                 frontier[fsize] = -1;
                 
                 for (int s=0; s<vertices[0]; s++) {
+                    if (found[0] > 0)
+                        return;
                     if (structs[s].id == current) {
                         for (int n=structs[s].start; n<structs[s].start + structs[s].size; n++)  {
                             int nb = nbr_list[n];
@@ -148,8 +157,6 @@ if __name__ == "__main__":
                         }
                         break;
                     }
-                    if (found[0] > 0)
-                        return;
                 }
             }
         }
