@@ -28,12 +28,11 @@ if __name__ == "__main__":
     prg = cl.Program(ctx, '''
         __kernel void square(__global int a[]){
             int gid = get_global_id(0);
-            int e[5];
-            for (int i=0; i<5; i++) {
-                e[i] = gid;
-                a[gid] += e[i];
-            }
-
+            int e = 0;
+            int *p = &e;
+            if (gid<5)
+                e++;
+            a[gid] = e;
         }
         ''').build()
 
